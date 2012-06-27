@@ -65,6 +65,8 @@ OBJ = obj
 #		Tools
 #-------------------------------------------------------------------------------
 
+UNAMEO=$(shell uname -o)
+
 # Tool suffix when cross-compiling
 CROSS_COMPILE = arm-none-eabi-
 
@@ -194,5 +196,8 @@ clean:
 	rm -fR $(OBJ) $(BIN)
 
 ifeq ($(filter $(MAKECMDGOALS), clean), )
+# cygwin toolchain screws up .d files with ':' characters in drive:\ paths
+ifneq ($(UNAMEO),Cygwin)
 -include $(DEPS)
+endif
 endif
