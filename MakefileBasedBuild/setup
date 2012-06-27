@@ -1,0 +1,38 @@
+#!/bin/sh
+
+TOOLCHAIN_EXTRACTED_PATH=g++_arm_none_eabi
+
+if [ `uname` == 'Linux' ]; then
+	TOOLCHAIN_FILE=gcc-arm-none-eabi-4.4.1-2010q1-188-linux32.tar.gz
+	BINARY_SUFFIX=
+elif [ `uname` == 'Darwin' ]; then
+	TOOLCHAIN_FILE=gcc-arm-none-eabi-4.4.1-2010q1-188-macos.tar.gz
+	BINARY_SUFFIX=
+elif [ `uname -o` == 'Cygwin' ]; then
+	TOOLCHAIN_FILE=gcc-arm-none-eabi-4.4.1-2010q1-188-win32.tar.gz
+	BINARY_SUFFIX=.exe
+fi
+
+TOOLCHAIN_URL=http://arduino.googlecode.com/files/${TOOLCHAIN_FILE}
+
+if [ ! -d "`pwd`/$TOOLCHAIN_EXTRACTED_PATH" ]; then
+	rm -f $TOOLCHAIN_FILE
+	echo Fetching toolchain from $TOOLCHAIN_URL
+	wget $TOOLCHAIN_URL || exit 1
+	echo Extracting toolchain
+	tar xzf $TOOLCHAIN_FILE || exit 1
+fi
+
+if [ "$1" != '-q' ]; then
+	echo "Toolchain download, please add to your path"
+	echo 'export PATH=$PATH:'\"`pwd`/$TOOLCHAIN_EXTRACTED_PATH/bin\"
+fi
+
+# check for bossac
+if [ ! -f bossac${BINARY_SUFFIX} ]; then
+	echo ""
+	echo "Please download the appropriate bossac binary from the bossa project page at "
+	echo "http://sourceforge.net/projects/b-o-s-s-a/"
+	echo "Place the bossac binary in the current directory"
+fi
+

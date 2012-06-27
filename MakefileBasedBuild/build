@@ -1,0 +1,10 @@
+#!/bin/sh
+
+export PATH=$PATH:`pwd`/g++_arm_none_eabi/bin
+
+echo building adk2tool
+make -C ../tools/adk2tool || exit 1
+
+echo building firmware
+make -C app $@ || exit 1
+

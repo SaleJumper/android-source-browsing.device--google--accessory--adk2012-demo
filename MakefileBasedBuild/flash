@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# customize this to point to the uart the adk2012 is mapped as
+UART=/dev/ttyUSB0
+
+BINARY_SUFFIX=
+if [ "`uname -o 2>/dev/null`" == 'Cygwin' ]; then
+	BINARY_SUFFIX=.exe
+fi
+
+ADK2TOOL=../tools/adk2tool/build-adk2tool/adk2tool${BINARY_SUFFIX}
+BOSSAC=./bossac${BINARY_SUFFIX}
+
+if [ ! -x $BOSSAC ]; then
+	echo "please download and install the bossac binary in the current directory to continue"
+	exit 1
+fi
+
+echo erasing device on $UART
+$ADK2TOOL $UART erase || exit 1
+
+echo flashing the device
+$BOSSAC -b -w -v app/bin/test_sam3x_ek_sam3x8-flash.bin || exit 1
+
+echo resetting the device
+$ADK2TOOL $UART reset
+
+
