@@ -33,6 +33,6 @@ if [ ! -f bossac${BINARY_SUFFIX} ]; then
 	echo ""
 	echo "Please download the appropriate bossac binary from the bossa project page at "
 	echo "http://sourceforge.net/projects/b-o-s-s-a/"
-	echo "Place the bossac binary in the current directory"
+	echo "Place the unpacked bossac binary in the current directory"
 fi
 
