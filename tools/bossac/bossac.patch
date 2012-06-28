@@ -1,0 +1,88 @@
+diff --git a/Makefile b/Makefile
+index 821f579..687d2be 100644
+--- a/Makefile
++++ b/Makefile
+@@ -67,6 +67,8 @@ ifeq ($(OS),Linux)
+ COMMON_SRCS+=PosixSerialPort.cpp LinuxPortFactory.cpp
+ COMMON_LIBS=-Wl,--as-needed
+ WX_LIBS+=-lX11
++COMMON_CXXFLAGS+=-m32
++COMMON_LDFLAGS+=-m32
+ 
+ MACHINE:=$(shell uname -m)
+ 
+@@ -151,7 +153,7 @@ BOSSASH_CXXFLAGS=$(COMMON_CXXFLAGS) -Isrc/arm-dis
+ #
+ # LD Flags
+ #
+-COMMON_LDFLAGS+=-g
++COMMON_LDFLAGS+=-g -m32
+ BOSSA_LDFLAGS=$(COMMON_LDFLAGS)
+ BOSSAC_LDFLAGS=$(COMMON_LDFLAGS)
+ BOSSASH_LDFLAGS=$(COMMON_LDFLAGS)
+diff --git a/src/EefcFlash.cpp b/src/EefcFlash.cpp
+index 890dd76..b8af491 100644
+--- a/src/EefcFlash.cpp
++++ b/src/EefcFlash.cpp
+@@ -62,7 +62,7 @@ EefcFlash::EefcFlash(Samba& samba,
+       _regs(regs), _canBrownout(canBrownout), _eraseAuto(true)
+ {
+     assert(planes == 1 || planes == 2);
+-    assert(pages <= 1024);
++    assert(pages <= 2048);
+     assert(lockRegions <= 32);
+ 
+     // SAM3 Errata (FWS must be 6)
+@@ -236,6 +236,7 @@ EefcFlash::setBootFlash(bool enable)
+ {
+     waitFSR();
+     writeFCR0(enable ? EEFC_FCMD_SGPB : EEFC_FCMD_CGPB, (_canBrownout ? 3 : 1));
++    waitFSR();
+ }
+ 
+ void
+@@ -292,7 +293,7 @@ EefcFlash::waitFSR()
+         }
+         if (fsr0 & fsr1 & 0x1)
+             break;
+-        usleep(100);
++        usleep(5000);
+     }
+     if (tries > 500)
+         throw FlashCmdError();
+diff --git a/src/PosixSerialPort.cpp b/src/PosixSerialPort.cpp
+index 9da2fbd..dd06ad2 100644
+--- a/src/PosixSerialPort.cpp
++++ b/src/PosixSerialPort.cpp
+@@ -237,6 +237,7 @@ PosixSerialPort::write(const uint8_t* buffer, int len)
+     if (_devfd == -1)
+         return -1;
+ 
++    flush();
+     return ::write(_devfd, buffer, len);
+ }
+ 
+diff --git a/src/Samba.cpp b/src/Samba.cpp
+index bc3abf7..49f5ae1 100644
+--- a/src/Samba.cpp
++++ b/src/Samba.cpp
+@@ -480,13 +480,16 @@ Samba::go(uint32_t addr)
+     if (_debug)
+         printf("%s(addr=%#x)\n", __FUNCTION__, addr);
+ 
++    // The SAM firmware can get confused if another command is
++    // received in the same USB data packet as the go command
++    // so we flush before and after writing the command over USB.
++    if (_isUsb)
++        _port->flush();
++
+     snprintf((char*) cmd, sizeof(cmd), "G%08X#", addr);
+     if (_port->write(cmd, sizeof(cmd) - 1) != sizeof(cmd) - 1)
+         throw SambaError();
+ 
+-    // The SAM firmware can get confused if another command is
+-    // received in the same USB data packet as the go command
+-    // so we flush after writing the command over USB.
+     if (_isUsb)
+         _port->flush();
+ }
